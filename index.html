@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>家族カレンダー</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+
+    margin:0;
+    padding:12px;
+
+    background:#f5f5f5;
+
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+/* ======================
+   ヘッダー
+====================== */
+
+.month-nav{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:20px;
+
+    margin-bottom:10px;
+}
+
+.month-nav h2{
+
+    margin:0;
+
+    min-width:170px;
+
+    text-align:center;
+
+    font-size:24px;
+}
+
+.month-nav button{
+
+    width:42px;
+
+    height:42px;
+
+    border:none;
+
+    border-radius:50%;
+
+    background:white;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.12);
+
+    cursor:pointer;
+
+    font-size:18px;
+}
+
+.today-btn{
+
+    border:none;
+
+    background:#35c759;
+
+    color:white;
+
+    border-radius:999px;
+
+    padding:8px 15px;
+
+    margin-bottom:10px;
+
+    cursor:pointer;
+}
+
+/* ======================
+   曜日
+====================== */
+
+.weekdays{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(7,1fr);
+
+    text-align:center;
+
+    margin-bottom:5px;
+
+    font-weight:bold;
+}
+
+.sun{
+    color:#ff5a5a;
+}
+
+.sat{
+    color:#3f7cff;
+}
+
+/* ======================
+   入力欄
+====================== */
+
+.controls{
+
+    display:flex;
+
+    gap:8px;
+
+    flex-wrap:wrap;
+
+    margin-bottom:12px;
+}
+
+input,
+select{
+
+    border:1px solid #ddd;
+
+    border-radius:10px;
+
+    padding:10px;
+
+    background:white;
+}
+
+.controls button{
+
+    border:none;
+
+    border-radius:10px;
+
+    padding:10px 15px;
+
+    background:#35c759;
+
+    color:white;
+
+    cursor:pointer;
+}
+
+/* ======================
+   カレンダー
+====================== */
+
+.calendar{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(7,1fr);
+
+    gap:3px;
+
+    background:white;
+
+    padding:8px;
+
+    border-radius:16px;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.08);
+}
+
+.day{
+
+    min-height:95px;
+
+    padding:4px;
+
+    border-radius:10px;
+
+    transition:.2s;
+}
+
+.day:hover{
+
+    background:#f7f7f7;
+}
+
+.other-month{
+
+    color:#bdbdbd;
+}
+
+.date{
+
+    width:28px;
+
+    height:28px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-weight:bold;
+}
+
+.today-date{
+
+    background:#35c759;
+
+    border-radius:50%;
+
+    color:white !important;
+}
+
+/* ======================
+   予定
+====================== */
+
+.event{
+
+    margin-top:4px;
+
+    padding:4px 8px;
+
+    border-radius:999px;
+
+    color:white;
+
+    font-size:11px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    cursor:pointer;
+}
+
+.kentaro{
+    background:#3f7cff;
+}
+
+.mama{
+    background:#ff5ba8;
+}
+
+.child1{
+    background:#35c759;
+}
+
+.child2{
+    background:#ff9800;
+}
+
+/* ======================
+   スマホ
+====================== */
+
+@media(max-width:700px){
+
+    .day{
+
+        min-height:80px;
+    }
+
+    .event{
+
+        font-size:10px;
+    }
+
+    .month-nav h2{
+
+        font-size:20px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="month-nav">
+
+    <button onclick="changeMonth(-1)">
+        ❮
+    </button>
+
+    <h2 id="monthTitle"></h2>
+
+    <button onclick="changeMonth(1)">
+        ❯
+    </button>
+
+</div>
+
+<button
+    class="today-btn"
+    onclick="goToday()">
+
+    今日へ戻る
+
+</button>
+
+<div class="weekdays">
+
+    <div>月</div>
+    <div>火</div>
+    <div>水</div>
+    <div>木</div>
+    <div>金</div>
+    <div class="sat">土</div>
+    <div class="sun">日</div>
+
+</div>
+
+<div class="controls">
+
+    <input
+        type="date"
+        id="eventDate">
+
+    <select id="member">
+
+        <option value="kentaro">
+            パパ
+        </option>
+
+        <option value="mama">
+            ママ
+        </option>
+
+        <option value="child1">
+            一汰
+        </option>
+
+        <option value="child2">
+            佐和
+        </option>
+
+    </select>
+
+    <input
+        type="text"
+        id="eventText"
+        placeholder="予定入力">
+
+    <button onclick="addEvent()">
+        追加
+    </button>
+
+</div>
+
+<div
+    id="calendar"
+    class="calendar">
+
+</div>
+
+<script>
+const calendar =
+    document.getElementById("calendar");
+
+let currentDate =
+    new Date();
+
+/* 保存 */
+
+function loadEvents(){
+
+    return JSON.parse(
+        localStorage.getItem(
+            "events"
+        ) || "[]"
+    );
+}
+
+function saveEvents(events){
+
+    localStorage.setItem(
+        "events",
+        JSON.stringify(events)
+    );
+}
+
+/* 今日へ戻る */
+
+function goToday(){
+
+    currentDate =
+        new Date();
+
+    renderCalendar();
+}
+
+/* 月変更 */
+
+function changeMonth(diff){
+
+    currentDate.setMonth(
+        currentDate.getMonth()
+        + diff
+    );
+
+    renderCalendar();
+}
+
+/* 追加 */
+
+function addEvent(){
+
+    const date =
+        document.getElementById(
+            "eventDate"
+        ).value;
+
+    const member =
+        document.getElementById(
+            "member"
+        ).value;
+
+    const text =
+        document.getElementById(
+            "eventText"
+        ).value;
+
+    if(!date || !text){
+
+        alert(
+            "入力してください"
+        );
+
+        return;
+    }
+
+    const events =
+        loadEvents();
+
+    events.push({
+        date,
+        member,
+        text
+    });
+
+    saveEvents(events);
+
+    document.getElementById(
+        "eventText"
+    ).value = "";
+
+    renderCalendar();
+}
+
+/* 編集 */
+
+function editEvent(eventObj){
+
+    const newText =
+        prompt(
+            "予定を編集",
+            eventObj.text
+        );
+
+    if(
+        newText === null ||
+        newText.trim() === ""
+    ){
+        return;
+    }
+
+    const events =
+        loadEvents();
+
+    events.forEach(e=>{
+
+        if(
+
+            e.date ===
+            eventObj.date &&
+
+            e.member ===
+            eventObj.member &&
+
+            e.text ===
+            eventObj.text
+
+        ){
+
+            e.text =
+                newText;
+        }
+
+    });
+
+    saveEvents(events);
+
+    renderCalendar();
+}
+
+/* 削除 */
+
+function deleteEvent(
+    eventObj
+){
+
+    if(
+        !confirm(
+            "この予定を削除しますか？"
+        )
+    ){
+        return;
+    }
+
+    let events =
+        loadEvents();
+
+    events =
+        events.filter(e =>
+
+            !(
+
+                e.date ===
+                eventObj.date &&
+
+                e.member ===
+                eventObj.member &&
+
+                e.text ===
+                eventObj.text
+
+            )
+
+        );
+
+    saveEvents(events);
+
+    renderCalendar();
+}
+
+/* 描画 */
+
+function renderCalendar(){
+
+    calendar.innerHTML = "";
+
+    const year =
+        currentDate.getFullYear();
+
+    const month =
+        currentDate.getMonth();
+
+    document.getElementById(
+        "monthTitle"
+    ).textContent =
+        `${year}年 ${month+1}月`;
+
+    const firstDay =
+        new Date(
+            year,
+            month,
+            1
+        );
+
+    const lastDay =
+        new Date(
+            year,
+            month+1,
+            0
+        );
+
+    let startWeekday =
+        firstDay.getDay();
+
+    startWeekday =
+        startWeekday === 0
+        ? 6
+        : startWeekday - 1;
+
+    const days =
+        lastDay.getDate();
+
+    const today =
+        new Date();
+
+    const events =
+        loadEvents();
+
+    /* 前月日数 */
+
+    const prevMonthLastDay =
+        new Date(
+            year,
+            month,
+            0
+        ).getDate();
+
+    /* 前月表示 */
+
+    for(
+        let i=startWeekday;
+        i>0;
+        i--
+    ){
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.className =
+            "day other-month";
+
+        div.innerHTML =
+            `<div class="date">
+            ${
+                prevMonthLastDay
+                - i + 1
+            }
+            </div>`;
+
+        calendar.appendChild(
+            div
+        );
+    }
+
+    /* 当月 */
+
+    for(
+        let day=1;
+        day<=days;
+        day++
+    ){
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.className =
+            "day";
+
+        const dateStr =
+            `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+
+        const weekday =
+            new Date(
+                year,
+                month,
+                day
+            ).getDay();
+
+        let color =
+            "black";
+
+        if(
+            weekday === 0
+        ){
+            color =
+                "#ff5a5a";
+        }
+
+        if(
+            weekday === 6
+        ){
+            color =
+                "#3f7cff";
+        }
+
+        let dateClass =
+            "date";
+
+        if(
+
+            year ===
+            today.getFullYear() &&
+
+            month ===
+            today.getMonth() &&
+
+            day ===
+            today.getDate()
+
+        ){
+
+            dateClass +=
+                " today-date";
+        }
+
+        div.innerHTML =
+
+        `
+        <div
+        class="${dateClass}"
+        style="color:${color}">
+        ${day}
+        </div>
+        `;
+
+        events
+        .filter(
+            e =>
+            e.date ===
+            dateStr
+        )
+        .forEach(e => {
+
+            const eventDiv =
+                document.createElement(
+                    "div"
+                );
+
+            eventDiv.className =
+                `event ${e.member}`;
+
+            eventDiv.textContent =
+                e.text;
+
+            /* タップ編集 */
+
+            eventDiv.onclick =
+                () =>
+                editEvent(e);
+
+            /* PC削除 */
+
+            eventDiv.ondblclick =
+                () =>
+                deleteEvent(e);
+
+            /* 長押し削除 */
+
+            let timer;
+
+            eventDiv.addEventListener(
+                "touchstart",
+                ()=>{
+
+                    timer =
+                        setTimeout(
+                            ()=>{
+
+                                deleteEvent(
+                                    e
+                                );
+
+                            },
+                            1000
+                        );
+
+                }
+            );
+
+            eventDiv.addEventListener(
+                "touchend",
+                ()=>{
+
+                    clearTimeout(
+                        timer
+                    );
+
+                }
+            );
+
+            div.appendChild(
+                eventDiv
+            );
+
+        });
+
+        calendar.appendChild(
+            div
+        );
+    }
+
+    /* 翌月 */
+
+    const totalCells =
+        calendar.children.length;
+
+    const remain =
+        42 - totalCells;
+
+    for(
+        let i=1;
+        i<=remain;
+        i++
+    ){
+
+        const div =
+            document.createElement(
+                "div"
+            );
+
+        div.className =
+            "day other-month";
+
+        div.innerHTML =
+            `<div class="date">
+            ${i}
+            </div>`;
+
+        calendar.appendChild(
+            div
+        );
+    }
+}
+
+renderCalendar();
+
+</script>
+
+</body>
+</html>
